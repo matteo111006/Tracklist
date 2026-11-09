@@ -1,0 +1,6 @@
+{
+  "name": "TRACKLIST 2.0 — Rap Italiano",
+  "description": "Archivio personale di album rap italiano con votazione traccia per traccia, classifiche automatiche, statistiche, awards e confronto.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,6 @@
+{
+  "summary":  "Piano di implementazione per la persistenza permanente dei dati tra dispositivi tramite account personale, la risoluzione definitiva del reset della pagina al refresh e l'introduzione della modifica manuale di foto e bio nella scheda artista con protezione da sovrascritture automatiche.",
+  "updatedAt":  "2026-11-08T14:09:18.974195824Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

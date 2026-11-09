@@ -1,0 +1,22 @@
+// Shared by backup import and authenticated cloud writes.
+export function validateExperienceData(data: any): void {
+  const validTrack = (t: any) => t && typeof t.id === 'string' && typeof t.title === 'string' && Number.isFinite(t.trackNumber) && (t.rating === null || (Number.isFinite(t.rating) && t.rating >= 0 && t.rating <= 10));
+  const validDate = (date: any) => typeof date === 'string' && Number.isFinite(Date.parse(date));
+  const views = data.profile?.savedViews;
+  if (views !== undefined && (!Array.isArray(views) || views.length > 100 || views.some((v: any) => !v || typeof v.id !== 'string' || typeof v.name !== 'string' || !v.name.trim() || v.name.length > 60 || !validDate(v.createdAt) || !v.filters || typeof v.filters.search !== 'string' || v.filters.search.length > 200 || typeof v.filters.artist !== 'string' || !['all', 'standard', 'deluxe', 'remaster', 'modified'].includes(v.filters.edition) || !['voto', 'anno', 'titolo', 'artista'].includes(v.filters.sort) || !['confirmed', 'all', 'incomplete', 'favorites'].includes(v.filters.status) || (v.filters.year !== 'all' && (!Number.isInteger(v.filters.year) || v.filters.year < 1900 || v.filters.year > 2200))))) throw new Error('Viste salvate non valide.');
+  const chats = data.profile?.aiConversations;
+  if (chats !== undefined && (!Array.isArray(chats) || chats.length > 100 || chats.some((c: any) => !c || typeof c.id !== 'string' || c.id.length > 100 || typeof c.title !== 'string' || c.title.length > 120 || !['identity', 'archive', 'discovery', 'wrapped'].includes(c.feature) || !validDate(c.createdAt) || !validDate(c.updatedAt) || !Array.isArray(c.messages) || c.messages.length > 100 || c.messages.some((m: any) => !m || typeof m.id !== 'string' || typeof m.question !== 'string' || m.question.length > 1000 || typeof m.text !== 'string' || m.text.length > 14000 || !validDate(m.generatedAt) || typeof m.catalogFingerprint !== 'string' || !Array.isArray(m.albumIds) || m.albumIds.some((id: any) => typeof id !== 'string') || !Array.isArray(m.recommendations) || m.recommendations.some((r: any) => !r || typeof r.title !== 'string' || typeof r.artist !== 'string' || typeof r.reason !== 'string'))))) throw new Error('Conversazioni IA non valide.');
+  for (const album of data.albums || []) {
+    if (album.history !== undefined && (!Array.isArray(album.history) || album.history.length > 1000 || album.history.some((r: any) => !r || typeof r.id !== 'string' || typeof r.date !== 'string' || !Number.isFinite(Date.parse(r.date)) || !['baseline', 'rating', 'edit', 'relisten', 'restore'].includes(r.kind) || typeof r.label !== 'string' || !r.state || typeof r.state.title !== 'string' || typeof r.state.artistId !== 'string' || typeof r.state.artistName !== 'string' || !Array.isArray(r.state.tracks) || !r.state.tracks.every(validTrack)))) throw new Error('Cronologia album non valida.');
+  }
+  for (const collection of data.collections || []) {
+    const dream = collection.dreamTracklist;
+    if (dream !== undefined && (!dream || !/^#[a-f0-9]{6}$/i.test(dream.theme) || !Array.isArray(dream.tracks) || dream.tracks.length > 20 || dream.tracks.some((r: any) => !r || typeof r.albumId !== 'string' || typeof r.trackId !== 'string'))) throw new Error('Tracklist ideale non valida.');
+  }
+  const experiences = data.profile?.experiences;
+  if (experiences !== undefined) {
+    if (!experiences || typeof experiences !== 'object' || Array.isArray(experiences)) throw new Error('Preferenze esperienze non valide.');
+    if (experiences.discovery !== undefined && (!experiences.discovery || Array.isArray(experiences.discovery) || typeof experiences.discovery !== 'object' || Object.values(experiences.discovery).some(v => !['known', 'interested', 'dismissed'].includes(v as string)))) throw new Error('Preferenze scoperte non valide.');
+    if (experiences.duels !== undefined && (!experiences.duels || Array.isArray(experiences.duels) || typeof experiences.duels !== 'object' || Object.entries(experiences.duels).some(([day, raw]) => { const v = raw as any; return !/^\d{4}-\d{2}-\d{2}$/.test(day) || !v || !Array.isArray(v.albumIds) || v.albumIds.length !== 2 || v.albumIds.some((id: any) => typeof id !== 'string') || v.albumIds[0] === v.albumIds[1] || !v.albumIds.includes(v.chosenId) || !Array.isArray(v.scores) || v.scores.length !== 2 || v.scores.some((n: any) => n !== null && (!Number.isFinite(n) || n < 0 || n > 10)); }))) throw new Error('Sfide salvate non valide.');
+  }
+}

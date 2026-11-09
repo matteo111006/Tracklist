@@ -1,0 +1,23 @@
+import { uniqueId } from '../utils/uniqueId';
+import React, { useEffect, useState } from 'react';
+import type { LibraryFilters, SavedLibraryView } from '../types';
+import { storage } from '../services/storage';
+
+export const defaultLibraryFilters: LibraryFilters = { search: '', artist: 'all', edition: 'all', sort: 'voto', year: 'all', status: 'confirmed' };
+export function SavedLibraryViews({ filters, onApply }: { filters: LibraryFilters; onApply: (filters: LibraryFilters) => void }) {
+  const [views, setViews] = useState(() => storage.getProfile().savedViews || []), [name, setName] = useState(''), [creating, setCreating] = useState(false), [status, setStatus] = useState(''), [undo, setUndo] = useState<SavedLibraryView | null>(null);
+  useEffect(() => { const changed = () => setViews(storage.getProfile().savedViews || []); window.addEventListener('tracklist:profile_updated', changed); return () => window.removeEventListener('tracklist:profile_updated', changed); }, []);
+  const save = () => { try { const current = storage.getProfile(), list = current.savedViews || []; if (!name.trim()) throw new Error('Scrivi un nome per la vista.'); if (list.some(v => v.name.toLowerCase() === name.trim().toLowerCase())) throw new Error('Hai già una vista con questo nome. Scegli un nome diverso.'); if (list.length >= 30) throw new Error('Puoi conservare fino a 30 viste. Rimuovine una per crearne un’altra.'); storage.saveProfile({ ...current, savedViews: [...list, { id: uniqueId(), name: name.trim(), filters, createdAt: new Date().toISOString() }] }); setName(''); setCreating(false); setStatus('Vista salvata e disponibile nel tuo account.'); } catch (e) { setStatus((e as Error).message); } };
+  const remove = (view: SavedLibraryView) => { try { const current = storage.getProfile(); storage.saveProfile({ ...current, savedViews: (current.savedViews || []).filter(v => v.id !== view.id) }); setUndo(view); setStatus('Vista rimossa. Puoi annullare.'); } catch (e) { setStatus((e as Error).message); } };
+  const year = new Date().getFullYear();
+  return <section aria-label="Viste e filtri salvati" className="rounded-2xl border border-[#2e3a25] bg-[#11170c] p-4 sm:p-5 mb-6"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-sm text-white">Il tuo archivio, a portata di clic</h2><button className="text-xs text-[#c7ff36] border border-[#485c35] rounded-lg px-3 py-2" aria-expanded={creating} onClick={() => { setCreating(!creating); setStatus(''); }}>Salva i filtri attuali</button></div><div className="flex flex-wrap gap-2 mt-3">{[
+    { label: `Standard ${year}`, filters: { ...defaultLibraryFilters, edition: 'standard', year } },
+    { label: 'Album incompleti', filters: { ...defaultLibraryFilters, status: 'incomplete' as const } },
+    { label: 'Preferiti da riascoltare', filters: { ...defaultLibraryFilters, status: 'favorites' as const } },
+    { label: 'Azzera filtri', filters: defaultLibraryFilters },
+  ].map(preset => <button key={preset.label} className="text-xs text-[#b6c9a6] border border-[#35452a] rounded-full px-3 py-2 hover:text-[#c7ff36]" onClick={() => onApply(preset.filters)}>{preset.label}</button>)}</div><p className="text-[11px] text-[#839675] mt-2">Preferiti = media almeno 8 su album confermati. Le viste memorizzano i filtri e si aggiornano quando cambia l’archivio.</p>
+    {creating && <form className="flex flex-wrap gap-2 mt-4" onSubmit={e => { e.preventDefault(); save(); }}><input aria-label="Nome vista salvata" className="flex-1 min-w-0 rounded-lg bg-[#1c2813] border border-[#3f542f] px-3 py-2 text-sm text-white" maxLength={60} placeholder="es. Le mie deluxe del 2025" value={name} onChange={e => setName(e.target.value)} /><button className="rounded-lg bg-[#c7ff36] px-4 py-2 text-sm text-black">Salva vista</button></form>}
+    {!!views.length && <div className="flex flex-wrap gap-2 mt-4">{views.map(view => <div key={view.id} className="rounded-xl border border-[#405331] flex items-center"><button className="px-3 py-2 text-xs text-[#d0dfc4]" onClick={() => onApply(view.filters)}>{view.name}</button><button className="px-2 py-2 text-xs text-[#7f946d] hover:text-amber-200" aria-label={`Rimuovi vista ${view.name}`} onClick={() => remove(view)}>×</button></div>)}</div>}
+    {status && <p role="status" className="text-xs text-[#bdd4a8] mt-3">{status}{undo && <button className="ml-3 underline text-[#c7ff36]" onClick={() => { try { const current = storage.getProfile(); storage.saveProfile({ ...current, savedViews: [...(current.savedViews || []), undo] }); setUndo(null); setStatus('Vista ripristinata.'); } catch (e) { setStatus((e as Error).message); } }}>Annulla rimozione</button>}</p>}
+  </section>;
+}
