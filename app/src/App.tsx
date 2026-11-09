@@ -2,25 +2,25 @@ import { useAppNavigation } from './hooks/useAppNavigation';
 import { GlobalSearch } from './components/GlobalSearch';
 import { MobileNavigation } from './components/MobileNavigation';
 import { ResetPasswordView } from './components/ResetPasswordView';
-import { ExperienceHub } from './components/ExperienceHub';
-import React, { useState, useEffect, useCallback } from 'react';
+const ExperienceHub = lazy(() => import('./components/ExperienceHub').then(module => ({ default: module.ExperienceHub })));
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { SaveStatus } from './components/SaveStatus';
 import { Menu, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Album, Artist, AuthUser, CustomCollection, UserProfile } from './types';
 import { storage } from './services/storage';
 import { Sidebar, ActiveView } from './components/Sidebar';
-import { ClassificaView } from './components/ClassificaView';
-import { NuoveUsciteView } from './components/NuoveUsciteView';
-import { AggiungiAlbumView } from './components/AggiungiAlbumView';
-import { AlbumDetailView } from './components/AlbumDetailView';
-import { ArtistaView } from './components/ArtistaView';
-import { ConfrontoView } from './components/ConfrontoView';
-import { AwardsView } from './components/AwardsView';
-import { ProfiloView } from './components/ProfiloView';
-import { StatisticheView } from './components/StatisticheView';
-import { RaccolteView } from './components/RaccolteView';
-import { WrappedView } from './components/WrappedView';
+const ClassificaView = lazy(() => import('./components/ClassificaView').then(module => ({ default: module.ClassificaView })));
+const NuoveUsciteView = lazy(() => import('./components/NuoveUsciteView').then(module => ({ default: module.NuoveUsciteView })));
+const AggiungiAlbumView = lazy(() => import('./components/AggiungiAlbumView').then(module => ({ default: module.AggiungiAlbumView })));
+const AlbumDetailView = lazy(() => import('./components/AlbumDetailView').then(module => ({ default: module.AlbumDetailView })));
+const ArtistaView = lazy(() => import('./components/ArtistaView').then(module => ({ default: module.ArtistaView })));
+const ConfrontoView = lazy(() => import('./components/ConfrontoView').then(module => ({ default: module.ConfrontoView })));
+const AwardsView = lazy(() => import('./components/AwardsView').then(module => ({ default: module.AwardsView })));
+const ProfiloView = lazy(() => import('./components/ProfiloView').then(module => ({ default: module.ProfiloView })));
+const StatisticheView = lazy(() => import('./components/StatisticheView').then(module => ({ default: module.StatisticheView })));
+const RaccolteView = lazy(() => import('./components/RaccolteView').then(module => ({ default: module.RaccolteView })));
+const WrappedView = lazy(() => import('./components/WrappedView').then(module => ({ default: module.WrappedView })));
 import { ImportExportModal } from './components/ImportExportModal';
 import { ShareCardModal } from './components/ShareCardModal';
 import { AuthModal } from './components/AuthModal';
@@ -343,6 +343,7 @@ export default function App() {
       {/* Main Content Area with fluid Animated Page Transitions */}
       <main className="flex-1 lg:pl-[295px] pb-32 lg:pb-0 transition-all">
         <div className="max-w-[1300px] mx-auto px-5 sm:px-10 lg:px-16 py-8 sm:py-12 lg:py-14">
+          <Suspense fallback={<div role="status" className="py-12 text-center text-sm text-inherit opacity-70">Caricamento della sezione…</div>}>
           <AnimatePresence mode="wait">
             <motion.div
               key={navigation.entryKey}
@@ -471,6 +472,7 @@ export default function App() {
               )}
             </motion.div>
           </AnimatePresence>
+          </Suspense>
         </div>
       </main>
 

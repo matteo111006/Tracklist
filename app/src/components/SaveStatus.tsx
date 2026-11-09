@@ -8,13 +8,18 @@ export function SaveStatus() {
   useEffect(() => {
     const sync = (e: Event) => setStatus((e as CustomEvent).detail);
     const fail = (e: Event) => setError((e as CustomEvent).detail);
+    const recovered = () => setError('');
     const uncaught = (e: ErrorEvent) => { if (e.error?.message?.startsWith('Salvataggio non riuscito')) setError(e.error.message); };
     window.addEventListener('tracklist:sync_status', sync);
     window.addEventListener('tracklist:storage_error', fail);
+    window.addEventListener('tracklist:storage_recovered', recovered);
+    window.addEventListener('tracklist:albums_updated', recovered);
     window.addEventListener('error', uncaught);
     return () => {
       window.removeEventListener('tracklist:sync_status', sync);
       window.removeEventListener('tracklist:storage_error', fail);
+      window.removeEventListener('tracklist:storage_recovered', recovered);
+      window.removeEventListener('tracklist:albums_updated', recovered);
       window.removeEventListener('error', uncaught);
     };
   }, []);

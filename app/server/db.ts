@@ -1,3 +1,4 @@
+import { snapshotWithoutHistory } from '../src/utils/withoutHistory.ts';
 // Persistenza di account, sessioni e archivi.
 // In produzione (Render) usa Turso tramite TURSO_DATABASE_URL e TURSO_AUTH_TOKEN.
 // Senza queste variabili usa un file SQLite locale in .data/tracklist.db,
@@ -122,9 +123,18 @@ export async function deleteUserSessions(userId: string): Promise<void> {
 // ---------- Archivi utente ----------
 
 export async function readSnapshot(userId: string): Promise<Snapshot | null> {
-  const r = await (await db()).execute({ sql: 'SELECT revision, data FROM userdata WHERE user_id = ?', args: [userId] });
-  if (!r.rows.length) return null;
-  return { revision: Number(r.rows[0].revision), data: JSON.parse(r.rows[0].data as string) };
+  const client = await db();
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const r = await client.execute({ sql: 'SELECT revision, data FROM userdata WHERE user_id = ?', args: [userId] });
+    if (!r.rows.length) return null;
+    const revision = Number(r.rows[0].revision);
+    const original = JSON.parse(r.rows[0].data as string);
+    const data = snapshotWithoutHistory(original);
+    if (!original?.albums?.some((album: any) => album && 'history' in album)) return { revision, data };
+    const cleaned = await client.execute({ sql: 'UPDATE userdata SET data = ?, revision = revision + 1 WHERE user_id = ? AND revision = ?', args: [JSON.stringify(data), userId, revision] });
+    if (cleaned.rowsAffected === 1) return { revision: revision + 1, data };
+  }
+  throw new Error('Archivio modificato contemporaneamente. Riprova.');
 }
 
 /**
@@ -133,7 +143,7 @@ export async function readSnapshot(userId: string): Promise<Snapshot | null> {
  */
 export async function writeSnapshot(userId: string, expectedRevision: number, data: unknown): Promise<boolean> {
   const client = await db();
-  const json = JSON.stringify(data);
+  const json = JSON.stringify(snapshotWithoutHistory(data));
   const r = expectedRevision === 0
     ? await client.execute({ sql: 'INSERT INTO userdata (user_id, revision, data) VALUES (?, 1, ?) ON CONFLICT DO NOTHING', args: [userId, json] })
     : await client.execute({ sql: 'UPDATE userdata SET revision = revision + 1, data = ? WHERE user_id = ? AND revision = ?', args: [json, userId, expectedRevision] });
@@ -142,7 +152,7 @@ export async function writeSnapshot(userId: string, expectedRevision: number, da
 
 /** Scrittura diretta, usata solo dallo script di migrazione. */
 export async function putSnapshot(userId: string, snapshot: Snapshot): Promise<void> {
-  await (await db()).execute({ sql: 'INSERT INTO userdata (user_id, revision, data) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET revision = excluded.revision, data = excluded.data', args: [userId, snapshot.revision, JSON.stringify(snapshot.data)] });
+  await (await db()).execute({ sql: 'INSERT INTO userdata (user_id, revision, data) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET revision = excluded.revision, data = excluded.data', args: [userId, snapshot.revision, JSON.stringify(snapshotWithoutHistory(snapshot.data))] });
 }
 
 // ---------- Impostazioni ----------
@@ -154,4 +164,11 @@ export async function getSetting(key: string): Promise<string | null> {
 
 export async function setSetting(key: string, value: string): Promise<void> {
   await (await db()).execute({ sql: 'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value', args: [key, value] });
+}
+
+/** Close the local SQLite handle before test cleanup or a controlled shutdown. */
+export async function closeDatabase(): Promise<void> {
+  const pending = clientPromise;
+  clientPromise = null;
+  if (pending) (await pending).close();
 }

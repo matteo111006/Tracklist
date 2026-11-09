@@ -9,6 +9,8 @@ class MemoryStorage {
   setItem(key: string, value: string) { if (this.fail) throw new Error('quota'); this.data.set(key, value); }
   removeItem(key: string) { this.data.delete(key); }
   clear() { this.data.clear(); this.fail = false; }
+  get length() { return this.data.size; }
+  key(index: number) { return [...this.data.keys()][index] ?? null; }
 }
 const disk = new MemoryStorage();
 Object.assign(globalThis, { localStorage: disk, window: new EventTarget() });
@@ -17,6 +19,62 @@ const { storage } = await import('./storage');
 const { persistence, packSnapshot, unpackSnapshot } = await import('./persistence');
 const { encodeLocalValue, decodeLocalValue } = await import('./persistence');
 const originalFetch = globalThis.fetch;
+test('quota recovery compacts previous encodings without deleting account data', async () => {
+  const { zlibSync, strToU8 } = await import('fflate');
+  const text = JSON.stringify({ value: 'Album e voti 🎵'.repeat(10000) });
+  const legacy = '~tracklist-z1:' + Buffer.from(zlibSync(strToU8(text), { level: 1 })).toString('base64');
+  const legacyKey = 'tracklist_sync_baseline:account:other-account';
+  disk.setItem(legacyKey, legacy);
+  const previousSize = [...disk.data.values()].reduce((sum, value) => sum + value.length, 0);
+  const write = disk.setItem.bind(disk);
+  disk.setItem = (key, value) => {
+    const total = [...disk.data].reduce((sum, [k, v]) => sum + (k === key ? 0 : v.length), 0) + value.length;
+    if (total > previousSize + 5) throw new DOMException('quota', 'QuotaExceededError');
+    write(key, value);
+  };
+  try {
+    persistence.setItem('tracklist_profile_v5', JSON.stringify({ name: 'Saved after compaction', description: 'New rating'.repeat(10) }));
+    assert.equal(decodeLocalValue(disk.getItem(legacyKey)), text);
+    assert.ok(disk.getItem(legacyKey)!.length < legacy.length);
+    assert.equal(JSON.parse(persistence.getItem('tracklist_profile_v5')!).name, 'Saved after compaction');
+  } finally { disk.setItem = write; }
+});
+
+test('compact format uses less space than fast base64 and preserves nonrepetitive Unicode', async () => {
+  const { zlibSync, strToU8 } = await import('fflate');
+  const text = JSON.stringify(Array.from({ length: 10000 }, (_, i) => `${i} · ${String.fromCharCode(32 + (i * 631) % 40000)} 🎵`));
+  const old = '~tracklist-z1:' + Buffer.from(zlibSync(strToU8(text), { level: 1 })).toString('base64');
+  const compact = encodeLocalValue(text);
+  assert.equal(decodeLocalValue(old), text);
+  assert.equal(decodeLocalValue(compact), text);
+  assert.ok(compact.length < old.length * .5);
+});
+test('fast compression preserves Unicode and reads the previous browser format', async () => {
+  const { default: legacy } = await import('lz-string');
+  const text = JSON.stringify({ description: 'Città, musica 🎵, 日本語'.repeat(2000) });
+  assert.equal(decodeLocalValue(encodeLocalValue(text)), text);
+  assert.equal(decodeLocalValue('~tracklist-lz1:' + legacy.compressToUTF16(text)), text);
+});
+
+test('cached reads detect another tab changing or removing the stored value', () => {
+  persistence.setItem('tracklist_profile_v5', '{"name":"First"}');
+  assert.equal(persistence.getItem('tracklist_profile_v5'), '{"name":"First"}');
+  const key = `tracklist_profile_v5:account:${persistence.account}`;
+  disk.setItem(key, '{"name":"Second"}');
+  assert.equal(persistence.getItem('tracklist_profile_v5'), '{"name":"Second"}');
+  disk.removeItem(key);
+  assert.notEqual(persistence.getItem('tracklist_profile_v5'), '{"name":"Second"}');
+});
+
+test('applying the same snapshot does not rewrite browser storage or publish updates', () => {
+  const snapshot = storage.getSnapshot();
+  let updates = 0;
+  const listener = () => updates++;
+  window.addEventListener('tracklist:albums_updated', listener);
+  disk.fail = true;
+  try { assert.doesNotThrow(() => storage.applySnapshot(snapshot)); assert.equal(updates, 0); }
+  finally { disk.fail = false; window.removeEventListener('tracklist:albums_updated', listener); }
+});
 beforeEach(() => {
   storage.setAuthUser(null); disk.clear();
   storage.applySnapshot({ albums: structuredClone(initialAlbums), artists: structuredClone(initialArtists), collections: [], profile: { id: 'fixture', name: 'Fixture', email: '' }, deletedAlbumIds: [], timelineOverrides: {} });
@@ -62,34 +120,20 @@ test('large local snapshots compress losslessly with Unicode and old uncompresse
   assert.equal(persistence.getItem('tracklist_sync_baseline'), text);
 });
 
-test('relistening preserves previous scores, does not journal other albums, and restore survives reload', () => {
+test('rating updates keep current votes without creating album history', () => {
   const first = storage.getAlbums()[0];
-  storage.saveAlbum({ ...structuredClone(first), id: 'other-album' });
   storage.saveRelisten(first.id, Object.fromEntries(first.tracks.map(t => [t.id, 0])), 'A fresh perspective');
-  let album = storage.getAlbums().find(a => a.id === first.id)!;
-  assert.equal(album.history?.length, 2);
-  assert.equal(album.history?.[0].state.tracks[0].rating, first.tracks[0].rating);
-  assert.equal(album.history?.[1].kind, 'relisten');
-  assert.equal(storage.getAlbums().find(a => a.id === 'other-album')?.history, undefined);
-  storage.restoreAlbumRevision(first.id, album.history![0].id);
-  album = storage.getAlbums().find(a => a.id === first.id)!;
-  assert.equal(album.tracks[0].rating, first.tracks[0].rating);
-  assert.equal(album.history?.at(-1)?.kind, 'restore');
-  assert.equal(album.history?.length, 3);
-});
-test('unchanged relistening still creates an entry, failed writes preserve the whole prior history', () => {
-  const first = storage.getAlbums()[0];
-  const ratings = Object.fromEntries(first.tracks.map(t => [t.id, t.rating]));
-  storage.saveRelisten(first.id, ratings, 'Same judgment');
-  storage.saveRelisten(first.id, ratings, 'Another listen');
-  const before = storage.getAlbums()[0];
-  assert.equal(before.history?.length, 3);
+  const saved = storage.getAlbums().find(a => a.id === first.id)!;
+  assert.ok(saved.tracks.every(t => t.rating === 0));
+  assert.equal(saved.history, undefined);
+  const before = structuredClone(saved);
   disk.fail = true;
-  assert.throws(() => storage.saveRelisten(first.id, ratings, 'Must fail'));
+  assert.throws(() => storage.updateTrackRating(first.id, first.tracks[0].id, 8));
   disk.fail = false;
-  assert.deepEqual(storage.getAlbums()[0], before);
+  assert.deepEqual(storage.getAlbums().find(a => a.id === first.id), before);
 });
-test('history, discovery feedback and ordered dream tracklists round-trip in private backups', () => {
+
+test('current ratings, discovery feedback and ordered dream tracklists round-trip in private backups', () => {
   const album = storage.getAlbums()[0];
   storage.updateTrackRating(album.id, album.tracks[0].id, 5);
   storage.saveProfile({ ...storage.getProfile(), experiences: { discovery: { [album.id]: 'interested' } } });
@@ -97,7 +141,8 @@ test('history, discovery feedback and ordered dream tracklists round-trip in pri
   storage.saveCollection(col);
   const backup = storage.exportDataJSON();
   storage.importDataJSON(backup);
-  assert.equal(storage.getAlbums()[0].history?.length, 2);
+  assert.equal(storage.getAlbums()[0].history, undefined);
+  assert.equal(storage.getAlbums()[0].tracks[0].rating, 5);
   assert.deepEqual(storage.getCollections()[0], col);
   assert.equal(storage.getProfile().experiences?.discovery?.[album.id], 'interested');
   storage.setAuthUser({ id: 'other-user', name: 'Other', email: 'other@example.test' });

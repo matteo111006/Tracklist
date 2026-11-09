@@ -1,3 +1,7 @@
+import { gzip } from 'node:zlib';
+import { promisify } from 'node:util';
+const gzipAsync = promisify(gzip);
+import { snapshotWithoutHistory } from '../src/utils/withoutHistory.ts';
 import legacyCatalog from './private/catalogData.json' with { type: 'json' };
 import { validateExperienceData } from '../src/utils/experienceValidation.ts';
 import { assertEmailConfigured, EmailError, sendPasswordResetEmail } from './email.ts';
@@ -132,7 +136,7 @@ export function handleAuthAndSync(req: IncomingMessage, res: ServerResponse): bo
           return;
         }
 
-        if (body.initialData) validateSnapshot(body.initialData);
+        if (body.initialData) { body.initialData = snapshotWithoutHistory(body.initialData); validateSnapshot(body.initialData); }
         if (await findUserByEmail(email)) {
           res.statusCode = 400;
           res.end(JSON.stringify({ error: 'Un account con questa email esiste già.' }));
@@ -352,7 +356,13 @@ export function handleAuthAndSync(req: IncomingMessage, res: ServerResponse): bo
         }
 
         res.statusCode = 200;
-        res.end(JSON.stringify({ exists: !!snapshot.data, ...snapshot }));
+        const payload = JSON.stringify({ exists: !!snapshot.data, ...snapshot });
+        res.setHeader('Vary', 'Accept-Encoding');
+        if (payload.length > 65536 && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
+          const compressed = await gzipAsync(payload, { level: 1 });
+          res.setHeader('Content-Encoding', 'gzip');
+          res.end(compressed);
+        } else res.end(payload);
         return;
       }
 
@@ -367,7 +377,7 @@ export function handleAuthAndSync(req: IncomingMessage, res: ServerResponse): bo
           return;
         }
 
-        const dataToSave = body.data || body;
+        const dataToSave = snapshotWithoutHistory(body.data || body);
         validateSnapshot(dataToSave);
         const saved = Number.isInteger(body.expectedRevision) && await writeSnapshot(userId, body.expectedRevision, dataToSave);
         if (!saved) {

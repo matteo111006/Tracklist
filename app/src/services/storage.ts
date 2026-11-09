@@ -1,6 +1,6 @@
 import { uniqueId } from '../utils/uniqueId';
 import { artistBioUrl } from '../utils/artistBioContext';
-import { appendRevision } from '../utils/albumHistory';
+import { withoutHistory, snapshotWithoutHistory } from '../utils/withoutHistory';
 import { validateExperienceData } from '../utils/experienceValidation';
 import { musicFingerprint } from '../utils/usability';
 import type { AiRequest, AiResult, AiConversation, AiTurn } from '../types/ai';
@@ -94,10 +94,8 @@ function validateRating(rating: number | null) {
     throw new Error('Il voto deve essere tra 0 e 10, con incrementi di 0,25.');
 }
 
-function persistAlbumsWithHistory(list: Album[], kind?: import('../types').AlbumRevision['kind'], label?: string, targetId?: string) {
-  const previous = new Map(storage.getAlbums(true).map(a => [a.id, a]));
-  const updated = list.map(album => appendRevision(previous.get(album.id), album, !targetId || album.id === targetId ? kind : undefined, !targetId || album.id === targetId ? label : undefined));
-  persistence.setItem(ALBUMS_KEY, JSON.stringify(updated));
+function persistAlbums(list: Album[]) {
+  persistence.setItem(ALBUMS_KEY, JSON.stringify(list.map(withoutHistory)));
 }
 
 export const storage = {
@@ -171,10 +169,16 @@ export const storage = {
   },
 
   applySnapshot(data: any): void {
+    data = snapshotWithoutHistory(data);
+    const changed: string[] = [];
     for (const [field, key] of Object.entries(snapshotKeys)) {
-      if (data[field] !== undefined) persistence.setItem(key, JSON.stringify(data[field]));
+      if (data[field] === undefined) continue;
+      const value = JSON.stringify(data[field]);
+      if (persistence.getItem(key) === value) continue;
+      persistence.setItem(key, value);
+      changed.push(field === 'timelineOverrides' ? 'timeline' : field === 'deletedAlbumIds' ? 'albums' : field);
     }
-    publishDataEvents();
+    for (const kind of new Set(changed)) window.dispatchEvent(new CustomEvent('tracklist:' + kind + '_updated'));
   },
 
   scheduleCloudSync(): void {
@@ -393,6 +397,7 @@ export const storage = {
         list = albums;
       }
 
+      list = list.map(withoutHistory);
       if (includeDeleted) return list;
       return list.filter((a) => !deletedIds.has(a.id) && !a.deleted);
     } catch {
@@ -434,7 +439,7 @@ export const storage = {
       list.unshift(enrichedAlbum);
     }
     try {
-      persistAlbumsWithHistory(list);
+      persistAlbums(list);
     } catch (e) {
       throw e;
     }
@@ -474,7 +479,7 @@ export const storage = {
     }));
     persistence.setItem(COLLECTIONS_KEY, JSON.stringify(collections));
 
-    persistAlbumsWithHistory(list);
+    persistAlbums(list);
     window.dispatchEvent(new CustomEvent('tracklist:albums_updated'));
     window.dispatchEvent(new CustomEvent('tracklist:collections_updated'));
     this.scheduleCloudSync();
@@ -505,7 +510,7 @@ export const storage = {
     persistence.setItem(COLLECTIONS_KEY, JSON.stringify(collections));
     deletedMemberships.delete(albumId);
     window.dispatchEvent(new CustomEvent('tracklist:collections_updated'));
-    persistAlbumsWithHistory(list);
+    persistAlbums(list);
     window.dispatchEvent(new CustomEvent('tracklist:albums_updated'));
     this.scheduleCloudSync();
   },
@@ -530,7 +535,7 @@ export const storage = {
     }
 
     try {
-      persistAlbumsWithHistory(list);
+      persistAlbums(list);
     } catch (e) {
       throw e;
     }
@@ -550,7 +555,7 @@ export const storage = {
     });
     album.evaluationStatus = 'completed';
     try {
-      persistAlbumsWithHistory(list);
+      persistAlbums(list);
     } catch (e) {
       throw e;
     }
@@ -566,18 +571,7 @@ export const storage = {
     album.tracks = album.tracks.map(t => { validateRating(ratings[t.id]); return { ...t, rating: ratings[t.id] }; });
     if (!album.tracks.some(t => t.rating !== null)) throw new Error('Assegna almeno un voto.');
     album.evaluationStatus = 'completed';
-    persistAlbumsWithHistory(list, 'relisten', note.trim().slice(0, 500) || 'Riascolto confermato', albumId);
-    window.dispatchEvent(new CustomEvent('tracklist:albums_updated'));
-    this.scheduleCloudSync();
-  },
-
-  restoreAlbumRevision(albumId: string, revisionId: string): void {
-    const list = this.getAlbums(true);
-    const album = list.find(a => a.id === albumId && !a.deleted);
-    const revision = album?.history?.find(r => r.id === revisionId);
-    if (!album || !revision) throw new Error('Versione non disponibile.');
-    Object.assign(album, structuredClone(revision.state));
-    persistAlbumsWithHistory(list, 'restore', 'Ripristino: ' + revision.label);
+    persistAlbums(list);
     window.dispatchEvent(new CustomEvent('tracklist:albums_updated'));
     this.scheduleCloudSync();
   },
@@ -599,7 +593,7 @@ export const storage = {
     }
 
     try {
-      persistAlbumsWithHistory(list);
+      persistAlbums(list);
     } catch (e) {
       throw e;
     }
@@ -627,7 +621,7 @@ export const storage = {
     album.isManualTracklist = true;
 
     try {
-      persistAlbumsWithHistory(list);
+      persistAlbums(list);
     } catch (e) {
       throw e;
     }

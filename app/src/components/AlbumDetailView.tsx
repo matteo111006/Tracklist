@@ -1,6 +1,5 @@
 import { QuickRatingDialog, RatingDifference } from './QuickRatingDialog';
 import { useSaveAndClose } from '../hooks/useSaveAndClose';
-import { AlbumJournal } from './ExperienceHub';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   ArrowLeft,
@@ -590,7 +589,6 @@ export const AlbumDetailView: React.FC<AlbumDetailViewProps> = ({
         </motion.a>
       </div>
 
-      <AlbumJournal key={album.id} album={album} disabled={isRatingMode || isEditModalOpen || isTracklistModalOpen} />
       {/* STATISTICHE VOTI (Two Columns side by side with animated progress bars) */}
       <div className="mb-10">
         <div className="text-[10px] font-semibold text-[#66666f] tracking-widest uppercase mb-4">

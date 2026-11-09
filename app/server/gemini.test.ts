@@ -6,12 +6,14 @@ import http from 'node:http';
 import { initialAlbums } from '../test/fixtures';
 const dir = fs.mkdtempSync(path.resolve('../tracklist-ai-test-'));
 process.env.TRACKLIST_DATA_DIR = dir;
+delete process.env.TURSO_DATABASE_URL;
+delete process.env.TURSO_AUTH_TOKEN;
 const { buildAiContext, generateMusicAi, validateAiRequest, handleGemini } = await import('./gemini');
 const { handleAuthAndSync } = await import('./authAndSync');
 const store = await import('./db');
 const originalFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = originalFetch; delete process.env.GEMINI_API_KEY; delete process.env.GEMINI_MODEL; });
-after(() => { fs.rmSync(dir, { recursive: true, force: true }); });
+after(async () => { await store.closeDatabase(); assert.ok(path.resolve(dir).startsWith(path.resolve('..') + path.sep + 'tracklist-ai-test-')); await fs.promises.rm(dir, { recursive: true, force: true, maxRetries: 8, retryDelay: 100 }); });
 
 test('Gemini receives computed music facts, never reviews, history notes or covers', () => {
   const album = { ...structuredClone(initialAlbums[0]), review: { id: 'private', albumId: 'private', text: 'PRIVATE_REVIEW', date: '2026-11-08' }, coverUrl: 'PRIVATE_COVER', history: [{ label: 'PRIVATE_NOTE' }] } as any;

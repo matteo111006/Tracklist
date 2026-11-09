@@ -5,6 +5,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 const dir = fs.mkdtempSync(path.resolve('../tracklist-server-test-'));
 process.env.TRACKLIST_DATA_DIR = dir;
+delete process.env.TURSO_DATABASE_URL;
+delete process.env.TURSO_AUTH_TOKEN;
 delete process.env.RESEND_API_KEY;
 delete process.env.EMAIL_FROM;
 delete process.env.APP_URL;
@@ -15,7 +17,7 @@ await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
 const address = server.address() as { port: number };
 const base = `http://127.0.0.1:${address.port}`;
 const call = (route: string, body?: any, token?: string) => fetch(base + route, { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
-after(async () => { await new Promise<void>(resolve => server.close(() => resolve())); fs.rmSync(dir, { recursive: true, force: true }); });
+after(async () => { await new Promise<void>(resolve => server.close(() => resolve())); await store.closeDatabase(); assert.ok(path.resolve(dir).startsWith(path.resolve('..') + path.sep + 'tracklist-server-test-')); await fs.promises.rm(dir, { recursive: true, force: true, maxRetries: 8, retryDelay: 100 }); });
 test('sync requires session authentication and rejects stale writes', async () => {
   const registered = await call('/api/auth/register', { email: 'regression@example.test', password: 'test-password', name: 'Regression' });
   assert.equal(registered.status, 200);
@@ -99,4 +101,22 @@ test('two accounts cannot read or overwrite each other, including by forging use
     assert.equal((await call('/api/auth/legacy-catalog', undefined, b.token)).status, 403);
     assert.equal((await call('/api/auth/legacy-catalog', undefined, a.token)).status, 200);
   } finally { delete process.env.LEGACY_CATALOG_OWNER_ID; }
+});
+
+test('legacy history is removed atomically and old clients cannot reintroduce it', async () => {
+  const registered = await (await call('/api/auth/register', { email: 'history-removal@example.test', password: 'test-password' })).json();
+  const data = { albums: [{ id: 'a', title: 'Current album', tracks: [{ id: 't', rating: 8.75 }], history: [{ old: 'discarded' }] }], artists: [], collections: [], profile: { id: registered.user.id, name: 'Unicode è 🎵'.repeat(8000), email: '' } };
+  await (await store.db()).execute({ sql: 'INSERT INTO userdata (user_id, revision, data) VALUES (?, 1, ?)', args: [registered.user.id, JSON.stringify(data)] });
+  const response = await call('/api/sync', undefined, registered.token);
+  assert.equal(response.headers.get('content-encoding'), 'gzip');
+  const saved = await response.json();
+  assert.equal(saved.revision, 2);
+  assert.equal(saved.data.albums[0].history, undefined);
+  assert.equal(saved.data.albums[0].tracks[0].rating, 8.75);
+  assert.equal(saved.data.profile.name, data.profile.name);
+  const raw = await (await store.db()).execute({ sql: 'SELECT data FROM userdata WHERE user_id = ?', args: [registered.user.id] });
+  assert.equal(JSON.parse(raw.rows[0].data as string).albums[0].history, undefined);
+  assert.equal((await call('/api/sync', { data, expectedRevision: 1 }, registered.token)).status, 409);
+  assert.equal((await call('/api/sync', { data, expectedRevision: 2 }, registered.token)).status, 200);
+  assert.equal((await (await call('/api/sync', undefined, registered.token)).json()).data.albums[0].history, undefined);
 });
