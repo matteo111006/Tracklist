@@ -1,0 +1,76 @@
+/* Reversible appearance layer. Original component styles remain intact. */
+html[data-appearance="glass"] {
+  color-scheme: dark;
+  --glass-edge: rgba(255, 255, 255, .22);
+  --glass-surface: linear-gradient(145deg, rgba(255, 255, 255, .13), rgba(170, 170, 175, .065) 48%, rgba(240, 240, 245, .08));
+  background: #171719;
+}
+html[data-appearance="glass"] body {
+  background: radial-gradient(ellipse at 82% 8%, #ffffff16, transparent 48%), radial-gradient(ellipse at 30% 65%, #e8e8ed0a, transparent 50%), #171719;
+  background-attachment: fixed;
+}
+html[data-appearance="glass"] #root > .min-h-screen {
+  background: transparent !important;
+}
+html[data-appearance="glass"] :is(section, article, div)[class*="border"][class*="bg-[#1"],
+html[data-appearance="glass"] :is(section, article, div)[class*="border"][class*="bg-[#0"] {
+  background: var(--glass-surface) !important;
+  border-color: var(--glass-edge) !important;
+  box-shadow: inset 0 1px 0 #f0fcff12, inset 0 -1px 0 #00000016, 0 12px 38px #00000020;
+  backdrop-filter: blur(18px) saturate(130%);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+}
+html[data-appearance="glass"] aside {
+  background: linear-gradient(155deg, #ffffff18, #242426b8 42%, #202022cf) !important;
+  border-color: var(--glass-edge) !important;
+  backdrop-filter: blur(32px) saturate(145%);
+  -webkit-backdrop-filter: blur(32px) saturate(145%);
+  box-shadow: 12px 0 50px #00000015, inset -1px 0 0 #ffffff08;
+}
+html[data-appearance="glass"] header,
+html[data-appearance="glass"] nav[aria-label="Navigazione rapida mobile"] {
+  background: linear-gradient(120deg, #ffffff16, #272729aa) !important;
+  border-color: var(--glass-edge) !important;
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  box-shadow: 0 8px 28px #00000018, inset 0 1px 0 #ffffff14;
+}
+html[data-appearance="glass"] button[class*="bg-[#1"],
+html[data-appearance="glass"] button[class*="bg-[#2"],
+html[data-appearance="glass"] button[class*="bg-white/5"] {
+  background: linear-gradient(145deg, #ffffff22, #eeeeee0a) !important;
+  border-color: #ffffff2b !important;
+  box-shadow: inset 0 1px 0 #ffffff12, 0 4px 14px #00000012;
+}
+html[data-appearance="glass"] button[class*="bg-[#c7ff36]"] {
+  background: linear-gradient(145deg, #e1ff91, #c7ff36 55%, #addf30) !important;
+  box-shadow: inset 0 1px 0 #ffffff80, 0 6px 24px #b5ed3522;
+}
+html[data-appearance="glass"] :is(input:not([type="checkbox"]):not([type="range"]), textarea, select) {
+  background: #14141685 !important;
+  border-color: #ffffff29 !important;
+  box-shadow: inset 0 2px 8px #00000022, 0 1px 0 #ffffff08;
+}
+html[data-appearance="glass"] :is(input, textarea, select):focus-visible { border-color: #c7ff3680 !important; }
+html[data-appearance="glass"] [role="dialog"],
+html[data-appearance="glass"] #artist-profile-editor {
+  background: linear-gradient(145deg, #3d3d40f5, #222225f5) !important;
+  border-color: #d9f3ff33 !important;
+  box-shadow: inset 0 1px 0 #ffffff20, 0 28px 100px #00000066;
+}
+html[data-appearance="glass"] select option { background: #29292c; color: #f5f5f2; }
+html[data-appearance="glass"] :is(.text-\[\#55555c\], .text-\[\#66666e\], .text-\[\#66666f\], .text-\[\#77777f\]) { color: #b0b0b8; }
+html[data-appearance="glass"] ::-webkit-scrollbar-track { background: transparent; }
+html[data-appearance="glass"] ::-webkit-scrollbar-thumb { background: #ffffff30; }
+.tl-album-atmosphere { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: #19191b; }
+.tl-album-atmosphere img { width: 100%; height: 100%; object-fit: cover; filter: blur(85px) saturate(1.25); transform: scale(1.2); opacity: .48; }
+.tl-album-atmosphere::after { content: ''; position: absolute; inset: 0; background: linear-gradient(120deg, #1616189c, #16161866 55%, #161618b8); }
+@media (max-width: 1023px) {
+  html[data-appearance="glass"] nav[aria-label="Navigazione rapida mobile"] { inset: auto 10px 10px; border: 1px solid var(--glass-edge); border-radius: 26px; }
+}
+@media (prefers-contrast: more) {
+  html[data-appearance="glass"] { --glass-surface: #29292c; --glass-edge: #b8b8be; }
+}
+@supports not (backdrop-filter: blur(1px)) {
+  html[data-appearance="glass"] { --glass-surface: #29292c; }
+}

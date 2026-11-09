@@ -1,0 +1,65 @@
+.appearance-option { transition: border-color .2s, box-shadow .2s; }
+.appearance-option[aria-pressed="true"] { box-shadow: 0 0 0 1px #c7ff36; }
+.appearance-preview { display: flex; flex-direction: column; gap: 6px; padding: 14px; height: 84px; border-radius: 12px; border: 1px solid #ffffff20; }
+.appearance-preview span { height: 8px; width: 65%; border-radius: 8px; background: #ffffff40; }
+.appearance-preview span:first-child { width: 40%; background: #c7ff36; }
+.appearance-preview span:last-child { width: 85%; }
+.appearance-preview-original { background: #0d0d0f; }
+.appearance-preview-light { background: #f4f5f6; border-color: #d7d9df; }
+.appearance-preview-light span { background: #b5bac3; }
+.appearance-preview-light span:first-child { background: #437722; }
+.appearance-preview-glass { background: radial-gradient(at 90% 100%, #96795788, transparent), linear-gradient(140deg, #c2c5ce66, #494b5477); box-shadow: inset 0 1px 0 #ffffff60; }
+html[data-appearance="light"] { color-scheme: light; background: #f5f5f7; --light-accent: #396616; --light-accent-soft: #eaf1e4; }
+html[data-appearance="light"] body { background: #f5f5f7; color: #202126; }
+html[data-appearance="light"] #root > .min-h-screen { background: #f5f5f7 !important; color: #202126 !important; }
+html[data-appearance="light"] :is(div, section, article, button, nav, header, aside)[class*="bg-[#0"],
+html[data-appearance="light"] :is(div, section, article, button, nav, header, aside)[class*="bg-[#1"],
+html[data-appearance="light"] :is(div, section, article, button, nav, header, aside)[class*="bg-[#2"] {
+  background: #ffffff !important; border-color: #dedee5 !important;
+}
+html[data-appearance="light"] aside,
+html[data-appearance="light"] header,
+html[data-appearance="light"] nav[aria-label="Navigazione rapida mobile"] { background: #fffffff2 !important; border-color: #dedee5 !important; box-shadow: 0 4px 22px #20212606; }
+html[data-appearance="light"] :is(.text-white, [class*="text-[#f5f5"], .text-neutral-100, .text-neutral-200, .text-neutral-300) { color: #202126 !important; }
+html[data-appearance="light"] :is([class*="text-[#4"], [class*="text-[#5"], [class*="text-[#6"], [class*="text-[#7"], [class*="text-[#8"], [class*="text-[#9"], [class*="text-[#a3"], [class*="text-[#a5"], .text-neutral-400, .text-neutral-500) { color: #62636e !important; }
+html[data-appearance="light"] :is([class*="text-[#c7ff36]"], [class*="text-[#a3e635]"], [class*="text-[#b5"], [class*="text-[#d4ffd6]"]) { color: #396616 !important; }
+html[data-appearance="light"] :is(input:not([type="range"]):not([type="checkbox"]), textarea, select) { background: #f8f8fa !important; color: #202126 !important; border-color: #d4d4de !important; }
+html[data-appearance="light"] ::placeholder { color: #737582 !important; }
+html[data-appearance="light"] select option { background: white; color: #202126; }
+html[data-appearance="light"] [role="dialog"], html[data-appearance="light"] #artist-profile-editor { background: #fcfcfd !important; color: #202126 !important; border-color: #d4d4de !important; }
+html[data-appearance="light"] .appearance-option[aria-pressed="true"] { border-color: var(--light-accent) !important; box-shadow: 0 0 0 1px var(--light-accent); }
+html[data-appearance="light"] :is(button, [role="button"]):focus-visible { outline-color: var(--light-accent); }
+html[data-appearance="light"] ::-webkit-scrollbar-track { background: #f5f5f7; }
+html[data-appearance="light"] ::-webkit-scrollbar-thumb { background: #c3c4cd; }
+
+/* A single deeper green throughout the white theme, including the logo,
+   translucent badges, primary actions, charts and keyboard focus. */
+html[data-appearance="light"] [class*="text-[#c7ff36]"] { color: var(--light-accent) !important; }
+html[data-appearance="light"] [class*="border-[#c7ff36]"] { border-color: var(--light-accent) !important; }
+html[data-appearance="light"] [class*="bg-[#c7ff36]/"] { background: var(--light-accent-soft) !important; }
+html[data-appearance="light"] [class~="bg-[#c7ff36]"] { background: var(--light-accent) !important; color: white !important; }
+html[data-appearance="light"] button[class~="bg-[#c7ff36]"] :is(span, svg) { color: white !important; }
+html[data-appearance="light"] [class*="hover:bg-[#c7ff36]"]:hover { background: var(--light-accent) !important; color: white !important; }
+html[data-appearance="light"] .appearance-preview span:first-child { background: var(--light-accent); }
+html[data-appearance="light"] input { accent-color: var(--light-accent); }
+html[data-appearance="light"] :is(input, textarea, select):focus-visible { box-shadow: 0 0 0 3px #39661622; border-color: var(--light-accent) !important; }
+html[data-appearance="light"] [stroke="#c7ff36"] { stroke: var(--light-accent); }
+html[data-appearance="light"] [fill="#c7ff36"] { fill: var(--light-accent); }
+html[data-appearance="light"] [style*="color: rgb(199, 255, 54)"],
+html[data-appearance="light"] [style*="color: #c7ff36"] { color: var(--light-accent) !important; }
+html[data-appearance="light"] [style*="background-color: rgb(199, 255, 54)"],
+html[data-appearance="light"] [style*="background: rgb(199, 255, 54)"] { background: var(--light-accent) !important; }
+html[data-appearance="light"] ::selection { background: #cddfbd; color: #203611; }
+
+/* Shared green-tinted text palette, including experience and relisten controls. */
+html[data-appearance="light"] :is([class~="text-[#1ED760]"], [class~="text-[#43561c]"], [class~="text-[#626b57]"], [class~="text-[#68735d]"], [class~="text-[#68745a]"], [class~="text-[#6f7e5e]"], [class~="text-[#737e65]"], [class~="text-[#777d70]"], [class~="text-[#77806e]"], [class~="text-[#77876b]"], [class~="text-[#7d8772]"], [class~="text-[#7d906e]"], [class~="text-[#7f946d]"], [class~="text-[#819474]"], [class~="text-[#828e76]"], [class~="text-[#829773]"], [class~="text-[#839575]"], [class~="text-[#839675]"], [class~="text-[#849278]"], [class~="text-[#88947a]"], [class~="text-[#889775]"], [class~="text-[#89947d]"], [class~="text-[#8c9880]"], [class~="text-[#8d9880]"], [class~="text-[#8e9684]"], [class~="text-[#8e9c81]"], [class~="text-[#8e9f80]"], [class~="text-[#929a88]"], [class~="text-[#92a27b]"], [class~="text-[#92a582]"], [class~="text-[#94a486]"], [class~="text-[#95a786]"], [class~="text-[#96a98a]"], [class~="text-[#9aa18f]"], [class~="text-[#9ba58f]"], [class~="text-[#9ba98f]"], [class~="text-[#9bac8c]"], [class~="text-[#9ca78f]"], [class~="text-[#9dad90]"], [class~="text-[#9eae90]"], [class~="text-[#a0ad92]"], [class~="text-[#a2b494]"], [class~="text-[#a3e635]"], [class~="text-[#a5bd90]"], [class~="text-[#a6b49a]"], [class~="text-[#a7b19b]"], [class~="text-[#a8b19e]"], [class~="text-[#a8b79a]"], [class~="text-[#a8b99a]"], [class~="text-[#a8ba9b]"], [class~="text-[#a9b69e]"], [class~="text-[#a9bc9a]"], [class~="text-[#aab89d]"], [class~="text-[#adbd9f]"], [class~="text-[#b1c1a5]"], [class~="text-[#b6c6a5]"], [class~="text-[#b6c9a6]"], [class~="text-[#bac6ae]"], [class~="text-[#bdd4a8]"], [class~="text-[#c0d3b1]"], [class~="text-[#c7ff36]"], [class~="text-[#c8d2bf]"], [class~="text-[#d0dfc4]"], [class~="text-[#d0f6ac]"], [class~="text-[#d1ddc6]"], [class~="text-[#d4ddca]"], [class~="text-[#d4ffd6]"], [class~="text-[#d6efb9]"], [class~="text-[#d7e0cf]"], [class~="text-[#d8e9c4]"], [class~="text-[#e4f5bb]"]) { color: var(--light-accent) !important; }
+html[data-appearance="light"] .tl-unrated-count { background: white !important; color: var(--light-accent) !important; border-color: #b4c8a6 !important; box-shadow: 0 1px 3px #2036110a; }
+
+/* Complete light surfaces: badges and gradient panels also follow the theme. */
+html[data-appearance="light"] :is([class~="bg-[#080808]"], [class~="bg-[#09090b]"], [class~="bg-[#0b0b0e]"], [class~="bg-[#0c0c0e]"], [class~="bg-[#0c0d0b]"], [class~="bg-[#0d0d0f]"], [class~="bg-[#0d0d10]"], [class~="bg-[#0d120a]"], [class~="bg-[#0e0e11]"], [class~="bg-[#0f0f12]"], [class~="bg-[#0f0f13]"], [class~="bg-[#101013]"], [class~="bg-[#101014]"], [class~="bg-[#10130e]"], [class~="bg-[#10140d]"], [class~="bg-[#10190c]"], [class~="bg-[#111111]"], [class~="bg-[#111114]"], [class~="bg-[#111115]"], [class~="bg-[#111116]"], [class~="bg-[#11170c]"], [class~="bg-[#11170d]"], [class~="bg-[#11240c]"], [class~="bg-[#121215]"], [class~="bg-[#121216]"], [class~="bg-[#121217]"], [class~="bg-[#121c09]"], [class~="bg-[#121e10]"], [class~="bg-[#131317]"], [class~="bg-[#13220c]"], [class~="bg-[#141416]"], [class~="bg-[#141417]"], [class~="bg-[#141418]"], [class~="bg-[#141419]"], [class~="bg-[#14141a]"], [class~="bg-[#141710]"], [class~="bg-[#14200b]"], [class~="bg-[#151518]"], [class~="bg-[#15151a]"], [class~="bg-[#15151b]"], [class~="bg-[#151e0f]"], [class~="bg-[#161618]"], [class~="bg-[#161619]"], [class~="bg-[#16161a]"], [class~="bg-[#16161b]"], [class~="bg-[#16161c]"], [class~="bg-[#161c16]"], [class~="bg-[#16210b]"], [class~="bg-[#16220d]"], [class~="bg-[#16220e]"], [class~="bg-[#17171e]"], [class~="bg-[#171b13]"], [class~="bg-[#18181c]"], [class~="bg-[#18181d]"], [class~="bg-[#18181e]"], [class~="bg-[#18181f]"], [class~="bg-[#181820]"], [class~="bg-[#181d13]"], [class~="bg-[#182010]"], [class~="bg-[#18230f]"], [class~="bg-[#18260e]"], [class~="bg-[#191920]"], [class~="bg-[#191d16]"], [class~="bg-[#191e14]"], [class~="bg-[#1a1a1e]"], [class~="bg-[#1a1a1f]"], [class~="bg-[#1a1a20]"], [class~="bg-[#1a1a22]"], [class~="bg-[#1a2114]"], [class~="bg-[#1a2410]"], [class~="bg-[#1a2412]"], [class~="bg-[#1a2510]"], [class~="bg-[#1b1b20]"], [class~="bg-[#1b1b22]"], [class~="bg-[#1b2513]"], [class~="bg-[#1b2514]"], [class~="bg-[#1b2913]"], [class~="bg-[#1c1c24]"], [class~="bg-[#1c2515]"], [class~="bg-[#1c2813]"], [class~="bg-[#1c2814]"], [class~="bg-[#1c290e]"], [class~="bg-[#1c2a12]"], [class~="bg-[#1c2c11]"], [class~="bg-[#1d1d25]"], [class~="bg-[#1e1e24]"], [class~="bg-[#1e2712]"], [class~="bg-[#1f1f26]"], [class~="bg-[#202026]"], [class~="bg-[#202028]"], [class~="bg-[#202a17]"], [class~="bg-[#202f15]"], [class~="bg-[#203012]"], [class~="bg-[#203014]"], [class~="bg-[#211214]"], [class~="bg-[#222228]"], [class~="bg-[#22222a]"], [class~="bg-[#22222b]"], [class~="bg-[#22271b]"], [class~="bg-[#23232c]"], [class~="bg-[#242c1a]"], [class~="bg-[#242d1b]"], [class~="bg-[#252e1d]"], [class~="bg-[#253316]"], [class~="bg-[#253b16]"], [class~="bg-[#26311c]"], [class~="bg-[#26351a]"], [class~="bg-[#282011]"], [class~="bg-[#282834]"], [class~="bg-[#292316]"], [class~="bg-[#29351e]"], [class~="bg-[#2a2a34]"], [class~="bg-[#2b1f1f]"], [class~="bg-[#2b2b36]"], [class~="bg-[#2d2d35]"], [class~="bg-[#321d1d]"], [class~="bg-[#3b472b]"], [class~="bg-[#55555c]"]) { background: #fff !important; border-color: #dedee5 !important; }
+html[data-appearance="light"] :is(section, article, div)[class*="bg-gradient"][class*="border"] { background: #fff !important; border-color: #dedee5 !important; box-shadow: 0 8px 30px #20212608 !important; }
+html[data-appearance="light"] :is([class~="text-[#a0ad92]"], [class~="text-[#a2b494]"], [class~="text-[#a3a3a3]"], [class~="text-[#a3a3a8]"], [class~="text-[#a3a3ad]"], [class~="text-[#a6b49a]"], [class~="text-[#a7b19b]"], [class~="text-[#a8b19e]"], [class~="text-[#a8b79a]"], [class~="text-[#a8b99a]"], [class~="text-[#a8ba9b]"], [class~="text-[#a9b69e]"], [class~="text-[#a9bc9a]"], [class~="text-[#aab89d]"], [class~="text-[#adbd9f]"], [class~="text-[#b1c1a5]"], [class~="text-[#b6c6a5]"], [class~="text-[#b6c9a6]"], [class~="text-[#bac6ae]"], [class~="text-[#bdd4a8]"], [class~="text-[#c0d3b1]"], [class~="text-[#c8d2bf]"], [class~="text-[#d0dfc4]"], [class~="text-[#d1ddc6]"], [class~="text-[#d4ddca]"], [class~="text-[#d4ffd6]"], [class~="text-[#d6efb9]"], [class~="text-[#d7e0cf]"], [class~="text-[#d8e9c4]"], [class~="text-[#e0e0dc]"], [class~="text-[#e0e4d9]"], [class~="text-[#e4f5bb]"], [class~="text-[#edf0e7]"]) { color: #34363f !important; }
+html[data-appearance="light"] :is([class~="text-[#e0bc70]"], [class~="text-[#edc878]"], [class~="text-[#d8b568]"], [class~="text-[#f0d79e]"]) { color: #765514 !important; }
+html[data-appearance="light"] button[class~="bg-[#c7ff36]"], html[data-appearance="light"] [class~="bg-[#c7ff36]"][class~="text-black"] { background: #b8d9a0 !important; color: #11140b !important; box-shadow: none !important; }
+html[data-appearance="light"] button[class~="bg-[#c7ff36]"] :is(span, svg) { color: #11140b !important; }
+html[data-appearance="light"] [class*="hover:bg-[#c7ff36]"]:hover { background: #b8d9a0 !important; color: #11140b !important; }
